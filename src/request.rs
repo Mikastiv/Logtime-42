@@ -20,8 +20,8 @@ pub struct User {
 
 #[derive(Deserialize, Debug)]
 pub struct Location {
-    pub begin_at: String,
-    pub end_at: String,
+    pub begin_at: Option<String>,
+    pub end_at: Option<String>,
 }
 
 fn check_response(easy: &mut Easy) -> Result<(), String> {

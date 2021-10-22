@@ -8,8 +8,14 @@ mod request;
 
 fn sum_time(locations: &Vec<Location>) -> f64 {
     locations.iter().fold(0.0, |acc, loc: &Location| {
-        let start = DateTime::parse_from_rfc3339(&loc.begin_at).unwrap();
-        let end = DateTime::parse_from_rfc3339(&loc.end_at).unwrap();
+        let (start, end) = match (&loc.begin_at, &loc.end_at) {
+            (Some(ref s), Some(ref e)) => {
+                let start = DateTime::parse_from_rfc3339(s).unwrap();
+                let end = DateTime::parse_from_rfc3339(e).unwrap();
+                (start, end)
+            }
+            _ => return acc,
+        };
 
         let time = end.signed_duration_since(start);
         let minutes = time.num_seconds() as f64 / 60.0;
