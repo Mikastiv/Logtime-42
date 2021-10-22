@@ -4,9 +4,11 @@ use std::io::Read;
 use chrono::DateTime;
 use curl::easy::{Easy, List};
 use serde::Deserialize;
+use url::form_urlencoded;
 
-const URL: &'static str = "https://api.intra.42.fr/";
-const BASE_API: &'static str = "https://api.intra.42.fr/v2/";
+const URL: &str = "https://api.intra.42.fr/";
+const BASE_API: &str = "https://api.intra.42.fr/v2/";
+const TIME: &str = "T00:00";
 
 #[derive(Deserialize)]
 struct Auth {
@@ -19,7 +21,7 @@ struct Config {
     secret: String,
     login: String,
     from: String,
-    until: String,
+    to: String,
 }
 
 #[derive(Deserialize, Clone)]
@@ -131,15 +133,18 @@ fn get_locations(
     easy: &mut Easy,
     token: &str,
     user_id: u32,
-    start_at: &str,
-    end_at: &str,
+    config: &Config,
 ) -> Result<Vec<Location>, curl::Error> {
+    let time = form_urlencoded::Serializer::new(String::new())
+        .append_key_only(TIME)
+        .finish();
     let url = format!(
-        "{url}users/{id}/locations?range[begin_at]={start},{end}",
+        "{url}users/{id}/locations?range[begin_at]={start}{time},{end}{time}",
         url = BASE_API,
         id = user_id,
-        start = start_at,
-        end = end_at
+        start = &config.from,
+        end = &config.to,
+        time = time
     );
 
     easy.reset();
@@ -174,11 +179,9 @@ fn main() {
 
     let token = authenticate(&mut easy, &config).unwrap();
     let user = get_user(&mut easy, &token, &config.login).unwrap();
-    let start = format!("{}T00%3A00%3A00-05%3A00", &config.from);
-    let end = format!("{}T00%3A00%3A00-05%3A00", &config.until);
-    let locations = get_locations(&mut easy, &token, user.id, &start, &end).unwrap();
+    let locations = get_locations(&mut easy, &token, user.id, &config).unwrap();
 
     println!("User: {}", user.login);
-    println!("From {} to {}", &config.from, &config.until);
+    println!("From {} to {}", &config.from, &config.to);
     println!("Time: {:.2} hours", sum_time(&locations) / 60.0);
 }
