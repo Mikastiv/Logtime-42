@@ -1,4 +1,5 @@
 use curl::easy::{Easy, List};
+use http::StatusCode;
 use serde::Deserialize;
 
 use crate::config::Config;
@@ -26,8 +27,14 @@ pub struct Location {
 fn check_response(easy: &mut Easy) -> Result<(), String> {
     match easy.response_code() {
         Ok(200) => Ok(()),
-        Ok(401) => Err(format!("401 Unauthorized")),
-        Ok(code) => Err(format!("HTTP return code: {}", code)),
+        Ok(code) => {
+            let status = StatusCode::from_u16(code as u16).unwrap();
+            Err(format!(
+                "{} {}",
+                status.as_u16(),
+                status.canonical_reason().unwrap()
+            ))
+        }
         Err(e) => Err(format!("cURL error code: {}", e)),
     }
 }
