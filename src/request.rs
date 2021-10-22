@@ -95,7 +95,13 @@ pub fn get_user(easy: &mut Easy, token: &str, login: &str) -> Result<User, curl:
 
     let response = send_request(easy, &url)?;
     let users = serde_json::from_slice::<Vec<User>>(&response).unwrap();
-    Ok(users.first().unwrap().clone())
+
+    if users.is_empty() {
+        eprintln!("Bad login: {}", &login);
+        std::process::exit(1);
+    }
+
+    Ok(users[0].clone())
 }
 
 pub fn get_locations(
