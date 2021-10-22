@@ -1,12 +1,10 @@
 use curl::easy::{Easy, List};
 use serde::Deserialize;
-use url::form_urlencoded;
 
 use crate::config::Config;
 
 const URL: &str = "https://api.intra.42.fr/";
 const BASE_API: &str = "https://api.intra.42.fr/v2/";
-const TIME: &str = "T00:00";
 
 #[derive(Deserialize)]
 struct Auth {
@@ -110,16 +108,12 @@ pub fn get_locations(
     user_id: u32,
     config: &Config,
 ) -> Result<Vec<Location>, curl::Error> {
-    let time = form_urlencoded::Serializer::new(String::new())
-        .append_key_only(TIME)
-        .finish();
     let url = format!(
-        "{url}users/{id}/locations?range[begin_at]={start}{time},{end}{time}",
+        "{url}users/{id}/locations?range[begin_at]={start},{end}",
         url = BASE_API,
         id = user_id,
         start = &config.from,
         end = &config.to,
-        time = time
     );
 
     easy.reset();
