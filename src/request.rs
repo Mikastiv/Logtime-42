@@ -1,6 +1,7 @@
 use curl::easy::{Easy, List};
 use http::StatusCode;
 use serde::Deserialize;
+use std::collections::HashMap;
 
 use crate::config::Config;
 
@@ -128,5 +129,26 @@ pub fn get_locations(
 
     let response = send_request(easy, &url)?;
     let locations = serde_json::from_slice::<Vec<Location>>(&response).unwrap();
+    Ok(locations)
+}
+
+pub fn get_locations_stats(
+    easy: &mut Easy,
+    token: &str,
+    user_id: u32,
+    config: &Config,
+) -> Result<HashMap<String, String>, curl::Error> {
+    let url = format!(
+        "{url}users/{id}/locations_stats?begin_at={start}",
+        url = BASE_API,
+        id = user_id,
+        start = &config.from,
+    );
+
+    easy.reset();
+    add_authorization(easy, token)?;
+
+    let response = send_request(easy, &url)?;
+    let locations = serde_json::from_slice::<HashMap<String, String>>(&response).unwrap();
     Ok(locations)
 }
