@@ -49,6 +49,10 @@ fn add_authorization(easy: &mut Easy, token: &str) -> Result<(), curl::Error> {
     Ok(())
 }
 
+fn url_encode(s: &str) -> String {
+    url::form_urlencoded::Serializer::new(String::new()).append_key_only(s).finish()
+}
+
 fn send_request(easy: &mut Easy, url: &str) -> Result<Vec<u8>, curl::Error> {
     let mut dst = Vec::new();
 
@@ -76,8 +80,8 @@ pub fn authenticate(easy: &mut Easy, config: &Config) -> Result<String, curl::Er
     let url = format!(
         "{url}oauth/token?grant_type=client_credentials&client_id={uid}&client_secret={secret}",
         url = URL,
-        uid = config.client_id,
-        secret = config.secret,
+        uid = url_encode(&config.client_id),
+        secret = url_encode(&config.secret),
     );
 
     easy.reset();
@@ -93,7 +97,7 @@ pub fn get_user(easy: &mut Easy, token: &str, login: &str) -> Result<User, curl:
     let url = format!(
         "{url}users?filter[login]={login}",
         url = BASE_API,
-        login = login
+        login = url_encode(login)
     );
 
     easy.reset();
@@ -120,8 +124,8 @@ pub fn get_locations(
         "{url}users/{id}/locations?range[begin_at]={start},{end}",
         url = BASE_API,
         id = user_id,
-        start = &config.from,
-        end = &config.to,
+        start = url_encode(&config.from),
+        end = url_encode(&config.to),
     );
 
     easy.reset();
@@ -142,7 +146,7 @@ pub fn get_locations_stats(
         "{url}users/{id}/locations_stats?begin_at={start}",
         url = BASE_API,
         id = user_id,
-        start = &config.from,
+        start = url_encode(&config.from),
     );
 
     easy.reset();
