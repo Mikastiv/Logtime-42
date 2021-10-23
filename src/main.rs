@@ -56,6 +56,7 @@ fn main() {
     let user = request::get_user(&mut easy, &token, &config.login).unwrap();
     let locations = request::get_locations(&mut easy, &token, user.id, &config).unwrap();
     // Bugged API call (Always returns 500)
+    // std::thread::sleep(std::time::Duration::from_secs(1));
     // let locations_stats = request::get_locations_stats(&mut easy, &token, user.id, &config).unwrap();
 
     println!("User: {}", user.login);
