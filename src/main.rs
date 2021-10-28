@@ -71,7 +71,6 @@ fn main() {
         std::process::exit(1);
     }
 
-    let mut easy = Easy::new();
     let config = match config::get_config() {
         Ok(c) => c,
         Err(e) => {
@@ -80,6 +79,7 @@ fn main() {
         }
     };
 
+    let mut easy = Easy::new();
     for (i, login) in args.iter().skip(1).enumerate() {
         print_user_logtime(&mut easy, &config, login).unwrap_or_else(|_| {});
 
