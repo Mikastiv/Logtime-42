@@ -85,7 +85,7 @@ fn main() {
 
         if i != args.len() - 2 {
             println!();
-            sleep(Duration::from_secs(1));
+            sleep(Duration::from_secs_f32(0.5));
         }
     }
 }
