@@ -65,6 +65,12 @@ fn print_user_logtime(easy: &mut Easy, config: &Config, login: &str) -> Result<(
 }
 
 fn main() {
+    let args: Vec<String> = std::env::args().collect();
+    if args.len() < 2 {
+        eprintln!("usage: {} <login 1> <login 2> ... <login n>", &args[0]);
+        std::process::exit(1);
+    }
+
     let mut easy = Easy::new();
     let config = match config::get_config() {
         Ok(c) => c,
@@ -73,13 +79,6 @@ fn main() {
             std::process::exit(1)
         }
     };
-
-    let args: Vec<String> = std::env::args().collect();
-
-    if args.len() < 2 {
-        eprintln!("usage: {} <login 1> <login 2> ... <login n>", &args[0]);
-        std::process::exit(1);
-    }
 
     for (i, login) in args.iter().skip(1).enumerate() {
         print_user_logtime(&mut easy, &config, login).unwrap_or_else(|_| {});
