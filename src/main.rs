@@ -61,8 +61,6 @@ fn print_user_logtime(easy: &mut Easy, config: &Config, login: &str) -> Result<(
     println!("Time: {:.2} hours", sum_time(&locations) / 60.0);
     // println!("Time: {:.2} hours", sum_durations(&locations_stats) / 60.0);
 
-    sleep(Duration::from_secs(1));
-
     Ok(())
 }
 
