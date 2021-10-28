@@ -5,7 +5,6 @@ Get the logtime for a specific user
 Uses a config.json file
 
 {  
-	"login": "mleblanc",  
 	"client_id": "42 Application UID",  
 	"secret": "42 Application SECRET_KEY",  
 	"from": "2021-10-21",  
