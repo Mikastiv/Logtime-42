@@ -9,7 +9,6 @@ pub const PAGE_SIZE: u32 = 500;
 pub struct Config {
     pub client_id: String,
     pub secret: String,
-    pub login: String,
     pub from: String,
     pub to: String,
 }

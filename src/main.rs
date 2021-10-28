@@ -1,8 +1,9 @@
 #![allow(dead_code)]
 
-use std::collections::HashMap;
+use std::{collections::HashMap, thread::sleep, time::Duration};
 
 use chrono::DateTime;
+use config::Config;
 use curl::easy::Easy;
 
 use request::Location;
@@ -37,11 +38,32 @@ fn parse_duration(str: &str) -> u64 {
 }
 
 fn sum_durations(locations: &HashMap<String, String>) -> f64 {
-    locations.iter().fold(0.0, |acc, (_, dur): (&String, &String)| {
-        let minutes = parse_duration(&dur) as f64;
+    locations
+        .iter()
+        .fold(0.0, |acc, (_, dur): (&String, &String)| {
+            let minutes = parse_duration(&dur) as f64;
 
-        acc + minutes
-    })
+            acc + minutes
+        })
+}
+
+fn print_user_logtime(easy: &mut Easy, config: &Config, login: &str) -> Result<(), curl::Error> {
+    let token = request::authenticate(easy, &config)?;
+    let user = request::get_user(easy, &token, login)?;
+    let locations = request::get_locations(easy, &token, user.id, &config)?;
+
+    // Bugged API call (Always returns 500)
+    // std::thread::sleep(std::time::Duration::from_secs(1));
+    // let locations_stats = request::get_locations_stats(easy, &token, user.id, &config).unwrap();
+
+    println!("User: {}", user.login);
+    println!("From {} to {}", &config.from, &config.to);
+    println!("Time: {:.2} hours", sum_time(&locations) / 60.0);
+    // println!("Time: {:.2} hours", sum_durations(&locations_stats) / 60.0);
+
+    sleep(Duration::from_secs(1));
+
+    Ok(())
 }
 
 fn main() {
@@ -54,15 +76,19 @@ fn main() {
         }
     };
 
-    let token = request::authenticate(&mut easy, &config).unwrap();
-    let user = request::get_user(&mut easy, &token, &config.login).unwrap();
-    let locations = request::get_locations(&mut easy, &token, user.id, &config).unwrap();
-    // Bugged API call (Always returns 500)
-    // std::thread::sleep(std::time::Duration::from_secs(1));
-    // let locations_stats = request::get_locations_stats(&mut easy, &token, user.id, &config).unwrap();
+    let args: Vec<String> = std::env::args().collect();
 
-    println!("User: {}", user.login);
-    println!("From {} to {}", &config.from, &config.to);
-    println!("Time: {:.2} hours", sum_time(&locations) / 60.0);
-    // println!("Time: {:.2} hours", sum_durations(&locations_stats) / 60.0);
+    if args.len() < 2 {
+        eprintln!("usage: {} <login 1> <login 2> ... <login n>", &args[0]);
+        std::process::exit(1);
+    }
+
+    for (i, login) in args.iter().skip(1).enumerate() {
+        print_user_logtime(&mut easy, &config, login).unwrap_or_else(|_| {});
+
+        if i != args.len() - 2 {
+            println!();
+            sleep(Duration::from_secs(1));
+        }
+    }
 }

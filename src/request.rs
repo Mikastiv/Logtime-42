@@ -50,7 +50,9 @@ fn add_authorization(easy: &mut Easy, token: &str) -> Result<(), curl::Error> {
 }
 
 fn url_encode(s: &str) -> String {
-    url::form_urlencoded::Serializer::new(String::new()).append_key_only(s).finish()
+    url::form_urlencoded::Serializer::new(String::new())
+        .append_key_only(s)
+        .finish()
 }
 
 fn send_request(easy: &mut Easy, url: &str) -> Result<Vec<u8>, curl::Error> {
@@ -71,7 +73,7 @@ fn send_request(easy: &mut Easy, url: &str) -> Result<Vec<u8>, curl::Error> {
         Ok(_) => Ok(dst),
         Err(e) => {
             eprintln!("{}", e);
-            std::process::exit(1);
+            Err(curl::Error::new(1))
         }
     }
 }
@@ -106,12 +108,13 @@ pub fn get_user(easy: &mut Easy, token: &str, login: &str) -> Result<User, curl:
     let response = send_request(easy, &url)?;
     let users = serde_json::from_slice::<Vec<User>>(&response).unwrap();
 
-    if users.is_empty() {
-        eprintln!("Bad login: {}", &login);
-        std::process::exit(1);
+    match users.is_empty() {
+        true => {
+            eprintln!("Bad login: {}", &login);
+            Err(curl::Error::new(1))
+        }
+        false => Ok(users[0].clone()),
     }
-
-    Ok(users[0].clone())
 }
 
 pub fn get_locations(
