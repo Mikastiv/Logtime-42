@@ -3,7 +3,7 @@ use std::io::Read;
 
 use serde::Deserialize;
 
-pub const PAGE_SIZE: u32 = 500;
+pub const PAGE_SIZE: usize = 1000;
 
 #[derive(Deserialize)]
 pub struct Config {
