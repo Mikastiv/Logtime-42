@@ -70,6 +70,7 @@ fn main() {
         eprintln!("usage: {} <login 1> <login 2> ... <login n>", &args[0]);
         std::process::exit(1);
     }
+    let args: Vec<String> = args.into_iter().skip(1).collect();
 
     let config = match config::get_config() {
         Ok(c) => c,
@@ -80,10 +81,10 @@ fn main() {
     };
 
     let mut easy = Easy::new();
-    for (i, login) in args.iter().skip(1).enumerate() {
+    for (i, login) in args.iter().enumerate() {
         print_user_logtime(&mut easy, &config, login).unwrap_or_else(|_| {});
 
-        if i != args.len() - 2 {
+        if i != args.len() - 1 {
             println!();
             sleep(Duration::from_secs_f32(0.5));
         }
