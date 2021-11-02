@@ -63,7 +63,7 @@ fn print_user_logtime(
     println!("User: {}", user.login);
     println!("From {} to {}", &config.from, &config.to);
     let time = sum_time(&locations) / 60.0;
-    println!("Time: {:.0}h{:02.0}", time.trunc(), time.fract() * 60.0);
+    println!("Time: {:01.0}h{:02.0}", time.trunc(), time.fract() * 60.0);
     // println!("Time: {:.2} hours", sum_durations(&locations_stats) / 60.0);
 
     Ok(())
