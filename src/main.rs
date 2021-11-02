@@ -47,10 +47,14 @@ fn sum_durations(locations: &HashMap<String, String>) -> f64 {
         })
 }
 
-fn print_user_logtime(easy: &mut Easy, config: &Config, login: &str) -> Result<(), curl::Error> {
-    let token = request::authenticate(easy, &config)?;
-    let user = request::get_user(easy, &token, login)?;
-    let locations = request::get_locations(easy, &token, user.id, &config)?;
+fn print_user_logtime(
+    easy: &mut Easy,
+    config: &Config,
+    token: &str,
+    login: &str,
+) -> Result<(), curl::Error> {
+    let user = request::get_user(easy, token, login)?;
+    let locations = request::get_locations(easy, token, user.id, &config)?;
 
     // Bugged API call (Always returns 500)
     // std::thread::sleep(std::time::Duration::from_secs(1));
@@ -58,7 +62,8 @@ fn print_user_logtime(easy: &mut Easy, config: &Config, login: &str) -> Result<(
 
     println!("User: {}", user.login);
     println!("From {} to {}", &config.from, &config.to);
-    println!("Time: {:.2} hours", sum_time(&locations) / 60.0);
+    let time = sum_time(&locations) / 60.0;
+    println!("Time: {:.0}h{:02.0}", time.trunc(), time.fract() * 60.0);
     // println!("Time: {:.2} hours", sum_durations(&locations_stats) / 60.0);
 
     Ok(())
@@ -81,12 +86,15 @@ fn main() {
     };
 
     let mut easy = Easy::new();
+    let token = request::authenticate(&mut easy, &config).unwrap();
     for (i, login) in args.iter().enumerate() {
-        print_user_logtime(&mut easy, &config, login).unwrap_or_else(|_| {});
+        print_user_logtime(&mut easy, &config, &token, login).unwrap_or_else(|_| {
+            sleep(Duration::from_secs_f32(0.75));
+        });
 
         if i != args.len() - 1 {
             println!();
-            sleep(Duration::from_secs_f32(0.5));
+            sleep(Duration::from_secs_f32(1.0));
         }
     }
 }
