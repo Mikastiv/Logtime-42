@@ -137,6 +137,7 @@ pub fn get_locations(
     Ok(locations)
 }
 
+#[allow(dead_code)]
 pub fn get_locations_stats(
     easy: &mut Easy,
     token: &str,

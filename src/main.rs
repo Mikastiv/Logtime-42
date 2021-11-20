@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use std::{collections::HashMap, thread::sleep, time::Duration};
 
 use chrono::DateTime;
@@ -10,6 +8,26 @@ use request::Location;
 
 mod config;
 mod request;
+
+#[allow(dead_code)]
+fn parse_duration(str: &str) -> u64 {
+    let parts: Vec<&str> = str.split(':').collect();
+    let hours: u64 = parts[0].parse().unwrap();
+    let minutes: u64 = parts[1].parse().unwrap();
+
+    hours * 60 + minutes
+}
+
+#[allow(dead_code)]
+fn sum_durations(locations: &HashMap<String, String>) -> f64 {
+    locations
+        .iter()
+        .fold(0.0, |acc, (_, dur): (&String, &String)| {
+            let minutes = parse_duration(&dur) as f64;
+
+            acc + minutes
+        })
+}
 
 fn sum_time(locations: &Vec<Location>) -> f64 {
     locations.iter().fold(0.0, |acc, loc: &Location| {
@@ -29,40 +47,13 @@ fn sum_time(locations: &Vec<Location>) -> f64 {
     })
 }
 
-fn parse_duration(str: &str) -> u64 {
-    let parts: Vec<&str> = str.split(':').collect();
-    let hours: u64 = parts[0].parse().unwrap();
-    let minutes: u64 = parts[1].parse().unwrap();
-
-    hours * 60 + minutes
-}
-
-fn sum_durations(locations: &HashMap<String, String>) -> f64 {
-    locations
-        .iter()
-        .fold(0.0, |acc, (_, dur): (&String, &String)| {
-            let minutes = parse_duration(&dur) as f64;
-
-            acc + minutes
-        })
-}
-
-fn print_user_logtime(
+fn get_user_logtime(
     easy: &mut Easy,
     config: &Config,
     token: &str,
     login: &str,
-    col_size: usize,
-) -> Result<(), curl::Error> {
-    let result = request::get_user(easy, token, login);
-    if let Err(e) = result {
-        if e.code() == 0 {
-            eprintln!("{:<width$} : bad login", login, width = col_size);
-        }
-        return Err(e);
-    }
-
-    let user = result.unwrap();
+) -> Result<f64, curl::Error> {
+    let user = request::get_user(easy, token, login)?;
     let locations = request::get_locations(easy, token, user.id, &config)?;
 
     // Bugged API call (Always returns 500)
@@ -70,16 +61,7 @@ fn print_user_logtime(
     // let locations_stats = request::get_locations_stats(easy, &token, user.id, &config).unwrap();
     // println!("Time: {:.2} hours", sum_durations(&locations_stats) / 60.0);
 
-    let time = sum_time(&locations) / 60.0;
-    println!(
-        "{:<width$} : {:01.0}h{:02.0}",
-        user.login,
-        time.trunc(),
-        time.fract() * 60.0,
-        width = col_size,
-    );
-
-    Ok(())
+    Ok(sum_time(&locations) / 60.0)
 }
 
 fn valid_date_format(date: &str) -> bool {
@@ -93,25 +75,76 @@ fn valid_date_format(date: &str) -> bool {
         return false;
     }
 
-    let _: u64 = if let Ok(y) = parts[0].parse() {
-        y
-    } else {
+    if let Err(_) = parts[0].parse::<u64>() {
         return false;
-    };
+    }
 
-    let _: u64 = if let Ok(y) = parts[1].parse() {
-        y
-    } else {
+    if let Err(_) = parts[1].parse::<u64>() {
         return false;
-    };
+    }
 
-    let _: u64 = if let Ok(y) = parts[2].parse() {
-        y
-    } else {
+    if let Err(_) = parts[2].parse::<u64>() {
         return false;
-    };
+    }
 
     true
+}
+
+fn validate_config_dates(config: &Config) -> Result<(), String> {
+    if !valid_date_format(&config.from) {
+        return Err(
+            "Bad date format in config file: 'from' date format must be YYYY-MM-DD".to_string(),
+        );
+    }
+    if !valid_date_format(&config.to) {
+        return Err(
+            "Bad date format in config file: 'to' date format must be YYYY-MM-DD".to_string(),
+        );
+    }
+    Ok(())
+}
+
+fn print_header(config: &Config) {
+    let text = format!("From {} to {}", &config.from, &config.to);
+    let line = "-".repeat(text.len());
+    println!("{}", &line);
+    println!("{}", &text);
+    println!("{}", &line);
+}
+
+fn print_users_logtime(easy: &mut Easy, logins: &Vec<String>, config: &Config) {
+    let col_len = logins
+        .iter()
+        .fold(0, |size, login| std::cmp::max(size, login.len()));
+
+    if let Ok(token) = request::authenticate(easy, &config) {
+        print_header(&config);
+
+        for (i, login) in logins.iter().enumerate() {
+            match get_user_logtime(easy, &config, &token, login) {
+                Ok(time) => {
+                    println!(
+                        "{:<width$} : {:01.0}h{:02.0}",
+                        login,
+                        time.trunc(),
+                        time.fract() * 60.0,
+                        width = col_len,
+                    );
+                }
+                Err(e) => {
+                    // If curl error is set to 0 (typically success), bad login
+                    if e.code() == 0 {
+                        eprintln!("{:<width$} : bad login", login, width = col_len);
+                    }
+                }
+            }
+
+            // Sleep a bit to prevent Too Many Requests error
+            if i != logins.len() - 1 {
+                sleep(Duration::from_secs_f32(1.0));
+            }
+        }
+    }
 }
 
 fn main() {
@@ -121,13 +154,6 @@ fn main() {
         std::process::exit(1);
     }
     let args: Vec<String> = args.into_iter().skip(1).collect();
-    let longest_login = args.iter().fold(0, |size, login| {
-        if login.len() > size {
-            login.len()
-        } else {
-            size
-        }
-    });
 
     let config = match config::get_config() {
         Ok(c) => c,
@@ -137,31 +163,11 @@ fn main() {
         }
     };
 
-    if !valid_date_format(&config.from) {
-        eprintln!("Bad date format in config file: 'from' date format must be YYYY-MM-DD");
-        std::process::exit(1);
-    }
-    if !valid_date_format(&config.to) {
-        eprintln!("Bad date format in config file: 'to' date format must be YYYY-MM-DD");
+    if let Err(msg) = validate_config_dates(&config) {
+        eprintln!("{}", msg);
         std::process::exit(1);
     }
 
     let mut easy = Easy::new();
-    if let Ok(token) = request::authenticate(&mut easy, &config) {
-        let line = "-".repeat(29);
-        println!("{}", &line);
-        println!("From {} to {}", &config.from, &config.to);
-        println!("{}", &line);
-        for (i, login) in args.iter().enumerate() {
-            print_user_logtime(&mut easy, &config, &token, login, longest_login).unwrap_or_else(
-                |_| {
-                    sleep(Duration::from_secs_f32(0.75));
-                },
-            );
-
-            if i != args.len() - 1 {
-                sleep(Duration::from_secs_f32(1.0));
-            }
-        }
-    }
+    print_users_logtime(&mut easy, &args, &config);
 }
