@@ -109,10 +109,7 @@ pub fn get_user(easy: &mut Easy, token: &str, login: &str) -> Result<User, curl:
     let users = serde_json::from_slice::<Vec<User>>(&response).unwrap();
 
     match users.is_empty() {
-        true => {
-            eprintln!("Bad login: {}", &login);
-            Err(curl::Error::new(1))
-        }
+        true => Err(curl::Error::new(0)),
         false => Ok(users[0].clone()),
     }
 }

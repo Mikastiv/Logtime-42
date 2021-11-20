@@ -52,21 +52,66 @@ fn print_user_logtime(
     config: &Config,
     token: &str,
     login: &str,
+    col_size: usize,
 ) -> Result<(), curl::Error> {
-    let user = request::get_user(easy, token, login)?;
+    let result = request::get_user(easy, token, login);
+    if let Err(e) = result {
+        if e.code() == 0 {
+            eprintln!("{:<width$} : bad login", login, width = col_size);
+        }
+        return Err(e);
+    }
+
+    let user = result.unwrap();
     let locations = request::get_locations(easy, token, user.id, &config)?;
 
     // Bugged API call (Always returns 500)
     // std::thread::sleep(std::time::Duration::from_secs(1));
     // let locations_stats = request::get_locations_stats(easy, &token, user.id, &config).unwrap();
-
-    println!("User: {}", user.login);
-    println!("From {} to {}", &config.from, &config.to);
-    let time = sum_time(&locations) / 60.0;
-    println!("Time: {:01.0}h{:02.0}", time.trunc(), time.fract() * 60.0);
     // println!("Time: {:.2} hours", sum_durations(&locations_stats) / 60.0);
 
+    let time = sum_time(&locations) / 60.0;
+    println!(
+        "{:<width$} : {:01.0}h{:02.0}",
+        user.login,
+        time.trunc(),
+        time.fract() * 60.0,
+        width = col_size,
+    );
+
     Ok(())
+}
+
+fn valid_date_format(date: &str) -> bool {
+    let parts: Vec<&str> = date.split('-').collect();
+
+    if parts.len() != 3 {
+        return false;
+    }
+
+    if parts[0].len() != 4 || parts[1].len() != 2 || parts[2].len() != 2 {
+        return false;
+    }
+
+    let _: u64 = if let Ok(y) = parts[0].parse() {
+        y
+    } else {
+        return false;
+    };
+
+    let _: u64 = if let Ok(y) = parts[1].parse() {
+        y
+    } else {
+        return false;
+    };
+
+    let _: u64 = if let Ok(y) = parts[2].parse() {
+        y
+    } else {
+        return false;
+    };
+
+    true
 }
 
 fn main() {
@@ -76,25 +121,47 @@ fn main() {
         std::process::exit(1);
     }
     let args: Vec<String> = args.into_iter().skip(1).collect();
+    let longest_login = args.iter().fold(0, |size, login| {
+        if login.len() > size {
+            login.len()
+        } else {
+            size
+        }
+    });
 
     let config = match config::get_config() {
         Ok(c) => c,
         Err(e) => {
             eprintln!("{}", e);
-            std::process::exit(1)
+            std::process::exit(1);
         }
     };
 
-    let mut easy = Easy::new();
-    let token = request::authenticate(&mut easy, &config).unwrap();
-    for (i, login) in args.iter().enumerate() {
-        print_user_logtime(&mut easy, &config, &token, login).unwrap_or_else(|_| {
-            sleep(Duration::from_secs_f32(0.75));
-        });
+    if !valid_date_format(&config.from) {
+        eprintln!("Bad date format in config file: 'from' date format must be YYYY-MM-DD");
+        std::process::exit(1);
+    }
+    if !valid_date_format(&config.to) {
+        eprintln!("Bad date format in config file: 'to' date format must be YYYY-MM-DD");
+        std::process::exit(1);
+    }
 
-        if i != args.len() - 1 {
-            println!();
-            sleep(Duration::from_secs_f32(1.0));
+    let mut easy = Easy::new();
+    if let Ok(token) = request::authenticate(&mut easy, &config) {
+        let line = "-".repeat(29);
+        println!("{}", &line);
+        println!("From {} to {}", &config.from, &config.to);
+        println!("{}", &line);
+        for (i, login) in args.iter().enumerate() {
+            print_user_logtime(&mut easy, &config, &token, login, longest_login).unwrap_or_else(
+                |_| {
+                    sleep(Duration::from_secs_f32(0.75));
+                },
+            );
+
+            if i != args.len() - 1 {
+                sleep(Duration::from_secs_f32(1.0));
+            }
         }
     }
 }
