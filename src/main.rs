@@ -106,7 +106,7 @@ fn validate_config_dates(config: &Config) -> Result<(), String> {
 
 fn print_header(config: &Config) {
     let text = format!("From {} to {}", &config.from, &config.to);
-    let line = "-".repeat(text.len());
+    let line = "─".repeat(text.len());
     println!("{}", &line);
     println!("{}", &text);
     println!("{}", &line);
