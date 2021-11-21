@@ -132,7 +132,7 @@ fn print_users_logtime(easy: &mut Easy, logins: &Vec<String>, config: &Config) {
                     );
                 }
                 Err(e) => {
-                    // If curl error is set to 0 (typically success), bad login
+                    // If curl error is set to 0 (curl success code), bad login
                     if e.code() == 0 {
                         eprintln!("{:<width$} : bad login", login, width = col_len);
                     }
