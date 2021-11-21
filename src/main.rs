@@ -142,7 +142,7 @@ fn print_users_logtime(easy: &mut Easy, logins: &Vec<String>, config: &Config) {
 
             // Sleep a bit to prevent Too Many Requests error
             if i != logins.len() - 1 {
-                sleep(Duration::from_secs_f32(1.0));
+                sleep(Duration::from_secs_f32(0.75));
             }
         }
     }
