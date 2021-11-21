@@ -2,6 +2,8 @@
 
 Get the logtime for a specific user
 
+Requests are made with page size 1000 to reduce the number of calls to the API. So if the date span is too long the values might be wrong
+
 Uses a config.json file
 
 {  
