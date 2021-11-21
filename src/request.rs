@@ -56,10 +56,9 @@ fn url_encode(s: &str) -> String {
 }
 
 fn send_request(easy: &mut Easy, url: &str) -> Result<Vec<u8>, curl::Error> {
-    let mut dst = Vec::new();
-
     easy.url(url)?;
 
+    let mut dst = Vec::new();
     {
         let mut transfer = easy.transfer();
         transfer.write_function(|data| {
@@ -106,11 +105,11 @@ pub fn get_user(easy: &mut Easy, token: &str, login: &str) -> Result<User, curl:
     add_authorization(easy, token)?;
 
     let response = send_request(easy, &url)?;
-    let users = serde_json::from_slice::<Vec<User>>(&response).unwrap();
+    let mut users = serde_json::from_slice::<Vec<User>>(&response).unwrap();
 
     match users.is_empty() {
         true => Err(curl::Error::new(0)),
-        false => Ok(users[0].clone()),
+        false => Ok(users.swap_remove(0)),
     }
 }
 

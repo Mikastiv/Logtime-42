@@ -23,7 +23,7 @@ fn sum_durations(locations: &HashMap<String, String>) -> f64 {
     locations
         .iter()
         .fold(0.0, |acc, (_, dur): (&String, &String)| {
-            let minutes = parse_duration(&dur) as f64;
+            let minutes = parse_duration(dur) as f64;
 
             acc + minutes
         })
@@ -64,6 +64,7 @@ fn get_user_logtime(
     Ok(sum_time(&locations) / 60.0)
 }
 
+// Checks for YYYY-MM-DD
 fn valid_date_format(date: &str) -> bool {
     let parts: Vec<&str> = date.split('-').collect();
 
@@ -115,7 +116,7 @@ fn print_header(config: &Config) {
 fn print_users_logtime(easy: &mut Easy, logins: &Vec<String>, config: &Config) {
     let col_len = logins
         .iter()
-        .fold(0, |size, login| std::cmp::max(size, login.len()));
+        .fold(0, |size, login| size.max(login.len()));
 
     if let Ok(token) = request::authenticate(easy, &config) {
         print_header(&config);
