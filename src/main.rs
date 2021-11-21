@@ -1,5 +1,6 @@
 use std::{collections::HashMap, thread::sleep, time::Duration};
 
+use ansi_term::Color;
 use chrono::DateTime;
 use config::Config;
 use curl::easy::Easy;
@@ -106,17 +107,19 @@ fn validate_config_dates(config: &Config) -> Result<(), String> {
 }
 
 fn print_header(config: &Config) {
-    let text = format!("From {} to {}", &config.from, &config.to);
-    let line = "─".repeat(text.len());
+    let text = format!(
+        "From {} to {}",
+        Color::Yellow.paint(&config.from),
+        Color::Yellow.paint(&config.to)
+    );
+    let line = Color::Blue.bold().paint("─".repeat(29));
     println!("{}", &line);
     println!("{}", &text);
     println!("{}", &line);
 }
 
 fn print_users_logtime(easy: &mut Easy, logins: &Vec<String>, config: &Config) {
-    let col_len = logins
-        .iter()
-        .fold(0, |size, login| size.max(login.len()));
+    let col_len = logins.iter().fold(0, |size, login| size.max(login.len()));
 
     if let Ok(token) = request::authenticate(easy, &config) {
         print_header(&config);
@@ -124,18 +127,23 @@ fn print_users_logtime(easy: &mut Easy, logins: &Vec<String>, config: &Config) {
         for (i, login) in logins.iter().enumerate() {
             match get_user_logtime(easy, &config, &token, login) {
                 Ok(time) => {
+                    let time = format!("{:01.0}h{:02.0}", time.trunc(), time.fract() * 60.0);
                     println!(
-                        "{:<width$} : {:01.0}h{:02.0}",
+                        "{:<width$} ➜ 🕑 {}",
                         login,
-                        time.trunc(),
-                        time.fract() * 60.0,
+                        Color::Green.bold().paint(&time),
                         width = col_len,
                     );
                 }
                 Err(e) => {
                     // If curl error is set to 0 (curl success code), bad login
                     if e.code() == 0 {
-                        eprintln!("{:<width$} : bad login", login, width = col_len);
+                        eprintln!(
+                            "{:<width$} ➜ ❌ {}",
+                            login,
+                            Color::Red.bold().paint("bad login"),
+                            width = col_len
+                        );
                     }
                 }
             }
