@@ -3,7 +3,7 @@ use std::io::Read;
 
 use serde::Deserialize;
 
-pub const PAGE_SIZE: usize = 1000;
+pub const PAGE_SIZE: usize = 10000;
 const CONFIG_FILE: &str = "config.json";
 
 #[derive(Deserialize)]
