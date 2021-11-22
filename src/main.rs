@@ -10,6 +10,8 @@ use request::Location;
 mod config;
 mod request;
 
+const LINE_LEN: usize = 29;
+
 #[allow(dead_code)]
 fn parse_duration(str: &str) -> u64 {
     let parts: Vec<&str> = str.split(':').collect();
@@ -106,16 +108,19 @@ fn validate_config_dates(config: &Config) -> Result<(), String> {
     Ok(())
 }
 
+fn blue_line(len: usize) {
+    println!("{}", Color::Blue.bold().paint("─".repeat(len)));
+}
+
 fn print_header(config: &Config) {
     let text = format!(
         "From {} to {}",
         Color::Yellow.paint(&config.from),
         Color::Yellow.paint(&config.to)
     );
-    let line = Color::Blue.bold().paint("─".repeat(29));
-    println!("{}", &line);
+    blue_line(LINE_LEN);
     println!("{}", &text);
-    println!("{}", &line);
+    blue_line(LINE_LEN);
 }
 
 fn print_users_logtime(easy: &mut Easy, logins: &Vec<String>, config: &Config) {
@@ -129,7 +134,7 @@ fn print_users_logtime(easy: &mut Easy, logins: &Vec<String>, config: &Config) {
                 Ok(time) => {
                     let time = format!("{:01.0}h{:02.0}", time.trunc(), time.fract() * 60.0);
                     println!(
-                        "{:<width$} ➜ 🕑 {}",
+                        "{:<width$} ➜  🕑 {}",
                         login,
                         Color::Green.bold().paint(&time),
                         width = col_len,
@@ -139,7 +144,7 @@ fn print_users_logtime(easy: &mut Easy, logins: &Vec<String>, config: &Config) {
                     // If curl error is set to 0 (curl success code), bad login
                     if e.code() == 0 {
                         eprintln!(
-                            "{:<width$} ➜ ❌ {}",
+                            "{:<width$} ➜  ❌ {}",
                             login,
                             Color::Red.bold().paint("bad login"),
                             width = col_len
@@ -153,6 +158,7 @@ fn print_users_logtime(easy: &mut Easy, logins: &Vec<String>, config: &Config) {
                 sleep(Duration::from_secs_f32(0.75));
             }
         }
+        blue_line(LINE_LEN);
     }
 }
 
