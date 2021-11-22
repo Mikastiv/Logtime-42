@@ -3,7 +3,7 @@ use http::StatusCode;
 use serde::Deserialize;
 use std::collections::HashMap;
 
-use crate::config::Config;
+use crate::config::{Config, PAGE_SIZE};
 
 const URL: &str = "https://api.intra.42.fr/";
 const BASE_API: &str = "https://api.intra.42.fr/v2/";
@@ -123,7 +123,7 @@ pub fn get_locations(
         "{url}users/{id}/locations?per_page={page_size}&range[begin_at]={start},{end}",
         url = BASE_API,
         id = user_id,
-        page_size = config.page_size,
+        page_size = PAGE_SIZE,
         start = url_encode(&config.from),
         end = url_encode(&config.to),
     );
@@ -147,7 +147,7 @@ pub fn get_locations_stats(
         "{url}users/{id}/locations_stats?per_page={page_size}&begin_at={start}",
         url = BASE_API,
         id = user_id,
-        page_size = config.page_size,
+        page_size = PAGE_SIZE,
         start = url_encode(&config.from),
     );
 

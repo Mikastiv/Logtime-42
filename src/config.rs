@@ -3,6 +3,7 @@ use std::io::Read;
 
 use serde::Deserialize;
 
+pub const PAGE_SIZE: usize = 1000;
 const CONFIG_FILE: &str = "config.json";
 
 #[derive(Deserialize)]
@@ -11,7 +12,6 @@ pub struct Config {
     pub secret: String,
     pub from: String,
     pub to: String,
-    pub page_size: u64,
 }
 
 pub fn get_config() -> Result<Config, String> {
