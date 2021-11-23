@@ -13,3 +13,5 @@ Uses a config.json file
 	"to": "2021-10-22"
 }
 ```
+
+![Screenshot](screenshot.png)
