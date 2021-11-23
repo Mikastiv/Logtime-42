@@ -1,4 +1,4 @@
-use std::{collections::HashMap, thread::sleep, time::Duration};
+use std::{thread::sleep, time::Duration};
 
 use ansi_term::Color;
 use chrono::DateTime;
@@ -11,26 +11,6 @@ mod config;
 mod request;
 
 const LINE_LEN: usize = 29;
-
-#[allow(dead_code)]
-fn parse_duration(str: &str) -> u64 {
-    let parts: Vec<&str> = str.split(':').collect();
-    let hours: u64 = parts[0].parse().unwrap();
-    let minutes: u64 = parts[1].parse().unwrap();
-
-    hours * 60 + minutes
-}
-
-#[allow(dead_code)]
-fn sum_durations(locations: &HashMap<String, String>) -> f64 {
-    locations
-        .iter()
-        .fold(0.0, |acc, (_, dur): (&String, &String)| {
-            let minutes = parse_duration(dur) as f64;
-
-            acc + minutes
-        })
-}
 
 fn sum_time(locations: &Vec<Location>) -> f64 {
     locations.iter().fold(0.0, |acc, loc: &Location| {
@@ -58,11 +38,6 @@ fn get_user_logtime(
 ) -> Result<f64, curl::Error> {
     let user = request::get_user(easy, token, login)?;
     let locations = request::get_locations(easy, token, user.id, &config)?;
-
-    // Bugged API call (Always returns 500)
-    // std::thread::sleep(std::time::Duration::from_secs(1));
-    // let locations_stats = request::get_locations_stats(easy, &token, user.id, &config).unwrap();
-    // println!("Time: {:.2} hours", sum_durations(&locations_stats) / 60.0);
 
     Ok(sum_time(&locations) / 60.0)
 }
@@ -155,7 +130,7 @@ fn print_users_logtime(easy: &mut Easy, logins: &Vec<String>, config: &Config) {
 
             // Sleep a bit to prevent Too Many Requests error
             if i != logins.len() - 1 {
-                sleep(Duration::from_secs_f32(0.75));
+                sleep(Duration::from_secs_f32(1.0));
             }
         }
         blue_line(LINE_LEN);

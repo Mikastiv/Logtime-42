@@ -1,10 +1,12 @@
+use std::{thread::sleep, time::Duration};
+
 use curl::easy::{Easy, List};
 use http::StatusCode;
 use serde::Deserialize;
-use std::collections::HashMap;
 
-use crate::config::{Config, PAGE_SIZE};
+use crate::config::Config;
 
+const PAGE_SIZE: u32 = 100;
 const URL: &str = "https://api.intra.42.fr/";
 const BASE_API: &str = "https://api.intra.42.fr/v2/";
 
@@ -40,6 +42,19 @@ fn check_response(easy: &mut Easy) -> Result<(), String> {
     }
 }
 
+fn total_count(raw_headers: &[u8]) -> u32 {
+    let string = String::from_utf8_lossy(raw_headers);
+    let headers: Vec<&str> = string.split('\n').collect();
+    let total_header = headers.iter().find(|&&s| s.starts_with("x-total:"));
+    match total_header {
+        Some(&header) => {
+            let parts: Vec<&str> = header.split_whitespace().collect();
+            parts[1].parse().unwrap()
+        }
+        None => 0,
+    }
+}
+
 fn add_authorization(easy: &mut Easy, token: &str) -> Result<(), curl::Error> {
     let mut headers = List::new();
 
@@ -55,12 +70,17 @@ fn url_encode(s: &str) -> String {
         .finish()
 }
 
-fn send_request(easy: &mut Easy, url: &str) -> Result<Vec<u8>, curl::Error> {
+fn send_request(easy: &mut Easy, url: &str) -> Result<(Vec<u8>, Vec<u8>), curl::Error> {
     easy.url(url)?;
 
     let mut dst = Vec::new();
+    let mut headers = Vec::new();
     {
         let mut transfer = easy.transfer();
+        transfer.header_function(|header| {
+            headers.extend_from_slice(header);
+            true
+        })?;
         transfer.write_function(|data| {
             dst.extend_from_slice(data);
             Ok(data.len())
@@ -69,7 +89,7 @@ fn send_request(easy: &mut Easy, url: &str) -> Result<Vec<u8>, curl::Error> {
     }
 
     match check_response(easy) {
-        Ok(_) => Ok(dst),
+        Ok(_) => Ok((dst, headers)),
         Err(e) => {
             eprintln!("{}", e);
             Err(curl::Error::new(1))
@@ -88,7 +108,7 @@ pub fn authenticate(easy: &mut Easy, config: &Config) -> Result<String, curl::Er
     easy.reset();
     easy.post(true)?;
 
-    let response = send_request(easy, &url)?;
+    let (response, _) = send_request(easy, &url)?;
     Ok(serde_json::from_slice::<Auth>(&response)
         .unwrap()
         .access_token)
@@ -104,7 +124,7 @@ pub fn get_user(easy: &mut Easy, token: &str, login: &str) -> Result<User, curl:
     easy.reset();
     add_authorization(easy, token)?;
 
-    let response = send_request(easy, &url)?;
+    let (response, _) = send_request(easy, &url)?;
     let mut users = serde_json::from_slice::<Vec<User>>(&response).unwrap();
 
     match users.is_empty() {
@@ -113,48 +133,43 @@ pub fn get_user(easy: &mut Easy, token: &str, login: &str) -> Result<User, curl:
     }
 }
 
+fn loc_url(user_id: u32, config: &Config, page: u32) -> String {
+    format!(
+        "{url}users/{id}/locations?page={page}&per_page={page_size}&range[begin_at]={start},{end}",
+        url = BASE_API,
+        id = user_id,
+        page = page,
+        page_size = PAGE_SIZE,
+        start = url_encode(&config.from),
+        end = url_encode(&config.to),
+    )
+}
+
 pub fn get_locations(
     easy: &mut Easy,
     token: &str,
     user_id: u32,
     config: &Config,
 ) -> Result<Vec<Location>, curl::Error> {
-    let url = format!(
-        "{url}users/{id}/locations?per_page={page_size}&range[begin_at]={start},{end}",
-        url = BASE_API,
-        id = user_id,
-        page_size = PAGE_SIZE,
-        start = url_encode(&config.from),
-        end = url_encode(&config.to),
-    );
+    let mut locations = Vec::new();
+    let mut page = 1;
 
-    easy.reset();
-    add_authorization(easy, token)?;
+    loop {
+        let url = loc_url(user_id, config, page);
 
-    let response = send_request(easy, &url)?;
-    let locations = serde_json::from_slice::<Vec<Location>>(&response).unwrap();
-    Ok(locations)
-}
+        easy.reset();
+        add_authorization(easy, token)?;
 
-#[allow(dead_code)]
-pub fn get_locations_stats(
-    easy: &mut Easy,
-    token: &str,
-    user_id: u32,
-    config: &Config,
-) -> Result<HashMap<String, String>, curl::Error> {
-    let url = format!(
-        "{url}users/{id}/locations_stats?per_page={page_size}&begin_at={start}",
-        url = BASE_API,
-        id = user_id,
-        page_size = PAGE_SIZE,
-        start = url_encode(&config.from),
-    );
+        let (response, headers) = send_request(easy, &url)?;
+        locations.append(&mut serde_json::from_slice::<Vec<Location>>(&response).unwrap());
 
-    easy.reset();
-    add_authorization(easy, token)?;
+        if total_count(&headers) < (PAGE_SIZE * page) {
+            break;
+        }
 
-    let response = send_request(easy, &url)?;
-    let locations = serde_json::from_slice::<HashMap<String, String>>(&response).unwrap();
+        page += 1;
+        sleep(Duration::from_secs_f64(1.0));
+    }
+
     Ok(locations)
 }
