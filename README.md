@@ -25,10 +25,10 @@ NOTE: if no date span is found in config file and the --month flag is not used, 
 Uses a config.json file
 ```
 {
-	"client_id": "42 Application UID",
-	"secret": "42 Application SECRET_KEY",
-	"from": "2021-10-21", // Optional if flag -m / -w / -d is used
-	"to": "2021-10-22", // Optional if flag -m / -w / -d is used
+    "client_id": "42 Application UID",
+    "secret": "42 Application SECRET_KEY",
+    "from": "2021-10-21", // Optional if flag -m / -w / -d is used
+    "to": "2021-10-22", // Optional if flag -m / -w / -d is used
     "login": "your_login" // Optional if passed with -l
 }
 ```
