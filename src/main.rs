@@ -158,7 +158,7 @@ fn main() {
     let login = login.unwrap_or_else(|| match &config.login {
         Some(l) => l.as_str(),
         None => {
-            eprintln!("No login found in config file or options, try --help");
+            eprintln!("No login found in config file or options, for more information try --help");
             std::process::exit(1);
         }
     });
