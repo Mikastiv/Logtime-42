@@ -3,7 +3,7 @@
 Get the logtime for a specific user
 
 ## Usage
-
+```
 gettime [FLAGS] [OPTIONS]
 
 FLAGS:
@@ -16,6 +16,7 @@ FLAGS:
 OPTIONS:
     -c, --config <FILE>    Explicit path of config file
     -l, --login <LOGIN>    42 login of the user
+```
 
 NOTE: if no date span is found in config file and the --month flag is not used, --month will be used by default
 
