@@ -9,8 +9,8 @@ const CONFIG_FILE: &str = "config.json";
 pub struct Config {
     pub client_id: String,
     pub secret: String,
-    pub from: String,
-    pub to: String,
+    pub from: Option<String>,
+    pub to: Option<String>,
     pub login: Option<String>,
 }
 

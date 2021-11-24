@@ -1,11 +1,13 @@
 use std::{thread::sleep, time::Duration};
 
+use chrono::DateTime;
 use curl::easy::{Easy, List};
 use http::StatusCode;
 use serde::Deserialize;
 
 use crate::config::Config;
 
+const TOTAL_ITEMS_HEADER: &str = "x-total:";
 const PAGE_SIZE: u32 = 100;
 const URL: &str = "https://api.intra.42.fr/";
 const BASE_API: &str = "https://api.intra.42.fr/v2/";
@@ -44,8 +46,10 @@ fn check_response(easy: &mut Easy) -> Result<(), String> {
 
 fn total_count(raw_headers: &[u8]) -> u32 {
     let string = String::from_utf8_lossy(raw_headers);
-    let headers: Vec<&str> = string.split('\n').collect();
-    let total_header = headers.iter().find(|&&s| s.starts_with("x-total:"));
+    let headers: Vec<&str> = string.split("\r\n").collect();
+    let total_header = headers
+        .iter()
+        .find(|&&s| s.to_lowercase().starts_with(TOTAL_ITEMS_HEADER));
     match total_header {
         Some(&header) => {
             let parts: Vec<&str> = header.split_whitespace().collect();
@@ -133,29 +137,30 @@ pub fn get_user(easy: &mut Easy, token: &str, login: &str) -> Result<User, curl:
     }
 }
 
-fn loc_url(user_id: u32, config: &Config, page: u32) -> String {
+fn loc_url(user_id: u32, from: &str, to: &str, page: u32) -> String {
     format!(
         "{url}users/{id}/locations?page={page}&per_page={page_size}&range[begin_at]={start},{end}",
         url = BASE_API,
         id = user_id,
         page = page,
         page_size = PAGE_SIZE,
-        start = url_encode(&config.from),
-        end = url_encode(&config.to),
+        start = url_encode(from),
+        end = url_encode(to),
     )
 }
 
-pub fn get_locations(
+fn get_locations(
     easy: &mut Easy,
     token: &str,
     user_id: u32,
-    config: &Config,
+    from: &str,
+    to: &str,
 ) -> Result<Vec<Location>, curl::Error> {
     let mut locations = Vec::new();
     let mut page = 1;
 
     loop {
-        let url = loc_url(user_id, config, page);
+        let url = loc_url(user_id, from, to, page);
 
         easy.reset();
         add_authorization(easy, token)?;
@@ -173,4 +178,35 @@ pub fn get_locations(
     }
 
     Ok(locations)
+}
+
+fn sum_time(locations: &Vec<Location>) -> f64 {
+    locations.iter().fold(0.0, |acc, loc: &Location| {
+        let (start, end) = match (&loc.begin_at, &loc.end_at) {
+            (Some(ref s), Some(ref e)) => {
+                let start = DateTime::parse_from_rfc3339(s).unwrap();
+                let end = DateTime::parse_from_rfc3339(e).unwrap();
+                (start, end)
+            }
+            _ => return acc,
+        };
+
+        let time = end.signed_duration_since(start);
+        let minutes = time.num_seconds() as f64 / 60.0;
+
+        acc + minutes
+    })
+}
+
+pub fn get_user_logtime(
+    easy: &mut Easy,
+    token: &str,
+    login: &str,
+    from: &str,
+    to: &str,
+) -> Result<f64, curl::Error> {
+    let user = get_user(easy, token, login)?;
+    let locations = get_locations(easy, token, user.id, from, to)?;
+
+    Ok(sum_time(&locations) / 60.0)
 }
