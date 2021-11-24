@@ -85,16 +85,19 @@ fn main() {
 
     let config = config::get_config(config_file).unwrap_or_else(|e| {
         eprintln!("{}", e);
+        // Config file is needed for 42 API key pair
         std::process::exit(1);
     });
 
     let login = get_login(&arg_login, &config.login).unwrap_or_else(|e| {
         eprintln!("{}", e);
+        // Login is needed for the program to work
         std::process::exit(1);
     });
 
     let (from, to) = get_date_span(month_flag, &config).unwrap_or_else(|e| {
         eprintln!("{}", e);
+        // Date span is needed for the program to work
         std::process::exit(1);
     });
 
