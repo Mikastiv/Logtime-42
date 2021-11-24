@@ -1,5 +1,6 @@
 use ansi_term::Color;
-use args::{ARG_CONFIG, ARG_CUR_MONTH, ARG_LOGIN};
+use args::{ARG_CONFIG, ARG_CUR_DAY, ARG_CUR_MONTH, ARG_CUR_WEEK, ARG_LOGIN};
+use clap::ArgMatches;
 use config::Config;
 use curl::easy::Easy;
 
@@ -58,20 +59,33 @@ fn get_login(arg_login: &Option<&str>, config_login: &Option<String>) -> Result<
     }
 }
 
-fn get_date_span(month_flag: bool, config: &Config) -> Result<(String, String), String> {
-    match month_flag {
-        true => Ok(date::start_and_end_of_month()),
-        false => match (&config.from, &config.to) {
-            (Some(from), Some(to)) => {
-                if let Err(msg) = date::validate_config_dates(&config) {
-                    return Err(msg);
-                }
+fn get_date_span(matches: &ArgMatches<'_>, config: &Config) -> Result<(String, String), String> {
+    let month_flag = matches.is_present(ARG_CUR_MONTH);
+    let day_flag = matches.is_present(ARG_CUR_DAY);
+    let week_flag = matches.is_present(ARG_CUR_WEEK);
 
-                Ok((from.to_string(), to.to_string()))
+    if month_flag {
+        return Ok(date::current_month_span());
+    }
+
+    if day_flag {
+        return Ok(date::current_day_span());
+    }
+
+    if week_flag {
+        return Ok(date::current_week_span());
+    }
+
+    match (&config.from, &config.to) {
+        (Some(from), Some(to)) => {
+            if let Err(msg) = date::validate_config_dates(&config) {
+                return Err(msg);
             }
-            // Default if no date span found
-            _ => Ok(date::start_and_end_of_month()),
-        },
+
+            Ok((from.to_string(), to.to_string()))
+        }
+        // Default if no date span found
+        _ => Ok(date::current_month_span()),
     }
 }
 
@@ -80,7 +94,6 @@ fn main() {
 
     let arg_login = matches.value_of(ARG_LOGIN);
     let config_file = matches.value_of(ARG_CONFIG);
-    let month_flag = matches.is_present(ARG_CUR_MONTH);
 
     let config = config::get_config(config_file).unwrap_or_else(|e| {
         eprintln!("{}", e);
@@ -94,7 +107,7 @@ fn main() {
         std::process::exit(1);
     });
 
-    let (from, to) = get_date_span(month_flag, &config).unwrap_or_else(|e| {
+    let (from, to) = get_date_span(&matches, &config).unwrap_or_else(|e| {
         eprintln!("{}", e);
         // Date span is needed for the program to work
         std::process::exit(1);

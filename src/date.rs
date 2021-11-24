@@ -63,7 +63,7 @@ fn is_leap_year(year: i32) -> bool {
     false
 }
 
-pub fn start_and_end_of_month() -> (String, String) {
+pub fn current_month_span() -> (String, String) {
     let today = Local::today();
     let start = format!("{:04}-{:02}-{:02}", today.year(), today.month(), 1);
     let last_day: u32 = match today.month() {
@@ -73,5 +73,52 @@ pub fn start_and_end_of_month() -> (String, String) {
         _ => 31,
     };
     let end = format!("{:04}-{:02}-{:02}", today.year(), today.month(), last_day);
+    (start, end)
+}
+
+pub fn current_day_span() -> (String, String) {
+    let today = Local::today();
+    let tomorrow = today.succ();
+    let start = format!(
+        "{:04}-{:02}-{:02}",
+        today.year(),
+        today.month(),
+        today.day()
+    );
+    let end = format!(
+        "{:04}-{:02}-{:02}",
+        tomorrow.year(),
+        tomorrow.month(),
+        tomorrow.day()
+    );
+
+    (start, end)
+}
+
+pub fn current_week_span() -> (String, String) {
+    let days_from_monday = Local::today().weekday().num_days_from_monday();
+    let mut week_start = Local::today();
+    for _ in 0..days_from_monday {
+        week_start = week_start.pred();
+    }
+
+    let mut week_end = week_start.clone();
+    for _ in 0..7 {
+        week_end = week_end.succ();
+    }
+
+    let start = format!(
+        "{:04}-{:02}-{:02}",
+        week_start.year(),
+        week_start.month(),
+        week_start.day()
+    );
+    let end = format!(
+        "{:04}-{:02}-{:02}",
+        week_end.year(),
+        week_end.month(),
+        week_end.day()
+    );
+
     (start, end)
 }
