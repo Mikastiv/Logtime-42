@@ -15,13 +15,12 @@ fn print_blue_line(len: usize) {
 }
 
 fn print_header(from: &str, to: &str) {
-    let text = format!(
+    print_blue_line(LINE_LEN);
+    println!(
         "From {} to {}",
         Color::Yellow.paint(from),
         Color::Yellow.paint(to)
     );
-    print_blue_line(LINE_LEN);
-    println!("{}", &text);
     print_blue_line(LINE_LEN);
 }
 

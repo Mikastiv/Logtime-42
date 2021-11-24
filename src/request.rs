@@ -157,24 +157,29 @@ fn get_locations(
     to: &str,
 ) -> Result<Vec<Location>, curl::Error> {
     let mut locations = Vec::new();
-    let mut page = 1;
+    let first_page = 1;
 
-    loop {
+    let url = loc_url(user_id, from, to, first_page);
+
+    easy.reset();
+    add_authorization(easy, token)?;
+
+    let (response, headers) = send_request(easy, &url)?;
+    locations.append(&mut serde_json::from_slice::<Vec<Location>>(&response).unwrap());
+
+    let last_page = total_count(&headers) / PAGE_SIZE + 1;
+
+    for page in first_page + 1..=last_page {
+        // Sleep a bit to prevent Too Many Requests error
+        sleep(Duration::from_secs_f64(1.0));
+
         let url = loc_url(user_id, from, to, page);
 
         easy.reset();
         add_authorization(easy, token)?;
 
-        let (response, headers) = send_request(easy, &url)?;
+        let (response, _) = send_request(easy, &url)?;
         locations.append(&mut serde_json::from_slice::<Vec<Location>>(&response).unwrap());
-
-        if total_count(&headers) < (PAGE_SIZE * page) {
-            break;
-        }
-
-        page += 1;
-        // Sleep a bit to prevent Too Many Requests error
-        sleep(Duration::from_secs_f64(1.0));
     }
 
     Ok(locations)
