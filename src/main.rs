@@ -106,22 +106,12 @@ fn print_user_logtime(easy: &mut Easy, login: &str, config: &Config) {
         match get_user_logtime(easy, &config, &token, login) {
             Ok(time) => {
                 let time = format!("{:01.0}h{:02.0}", time.trunc(), time.fract() * 60.0);
-                println!(
-                    "{:<width$} ➜  🕑 {}",
-                    login,
-                    Color::Green.bold().paint(&time),
-                    width = login.len(),
-                );
+                println!("{} ➜  🕑 {}", login, Color::Green.bold().paint(&time),);
             }
             Err(e) => {
                 // If curl error is set to 0 (curl success code), bad login
                 if e.code() == 0 {
-                    eprintln!(
-                        "{:<width$} ➜  ❌ {}",
-                        login,
-                        Color::Red.bold().paint("bad login"),
-                        width = login.len()
-                    );
+                    eprintln!("{} ➜  ❌ {}", login, Color::Red.bold().paint("bad login"),);
                 }
             }
         }
@@ -160,24 +150,18 @@ fn main() {
     let login = matches.value_of(CLAP_LOGIN);
     let config_file = matches.value_of(CLAP_CONFIG);
 
-    let config = match config::get_config(config_file) {
-        Ok(c) => c,
-        Err(e) => {
-            eprintln!("{}", e);
+    let config = config::get_config(config_file).unwrap_or_else(|e| {
+        eprintln!("{}", e);
+        std::process::exit(1);
+    });
+
+    let login = login.unwrap_or_else(|| match &config.login {
+        Some(l) => l.as_str(),
+        None => {
+            eprintln!("No login found in config file or options, try --help");
             std::process::exit(1);
         }
-    };
-
-    let login = match login {
-        Some(l) => l,
-        None => match &config.login {
-            Some(l) => l.as_str(),
-            None => {
-                eprintln!("No login found in config file or options, try --help");
-                std::process::exit(1);
-            }
-        },
-    };
+    });
 
     if let Err(msg) = validate_config_dates(&config) {
         eprintln!("{}", msg);
