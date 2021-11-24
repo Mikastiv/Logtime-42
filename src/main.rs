@@ -1,7 +1,6 @@
-use std::{thread::sleep, time::Duration};
-
 use ansi_term::Color;
 use chrono::DateTime;
+use clap::{App, Arg, ArgMatches};
 use config::Config;
 use curl::easy::Easy;
 
@@ -11,6 +10,8 @@ mod config;
 mod request;
 
 const LINE_LEN: usize = 29;
+const CLAP_CONFIG: &str = "config";
+const CLAP_LOGIN: &str = "user";
 
 fn sum_time(locations: &Vec<Location>) -> f64 {
     locations.iter().fold(0.0, |acc, loc: &Location| {
@@ -83,7 +84,7 @@ fn validate_config_dates(config: &Config) -> Result<(), String> {
     Ok(())
 }
 
-fn blue_line(len: usize) {
+fn print_blue_line(len: usize) {
     println!("{}", Color::Blue.bold().paint("─".repeat(len)));
 }
 
@@ -93,64 +94,89 @@ fn print_header(config: &Config) {
         Color::Yellow.paint(&config.from),
         Color::Yellow.paint(&config.to)
     );
-    blue_line(LINE_LEN);
+    print_blue_line(LINE_LEN);
     println!("{}", &text);
-    blue_line(LINE_LEN);
+    print_blue_line(LINE_LEN);
 }
 
-fn print_users_logtime(easy: &mut Easy, logins: &Vec<String>, config: &Config) {
-    let col_len = logins.iter().fold(0, |size, login| size.max(login.len()));
-
+fn print_user_logtime(easy: &mut Easy, login: &str, config: &Config) {
     if let Ok(token) = request::authenticate(easy, &config) {
         print_header(&config);
 
-        for (i, login) in logins.iter().enumerate() {
-            match get_user_logtime(easy, &config, &token, login) {
-                Ok(time) => {
-                    let time = format!("{:01.0}h{:02.0}", time.trunc(), time.fract() * 60.0);
-                    println!(
-                        "{:<width$} ➜  🕑 {}",
+        match get_user_logtime(easy, &config, &token, login) {
+            Ok(time) => {
+                let time = format!("{:01.0}h{:02.0}", time.trunc(), time.fract() * 60.0);
+                println!(
+                    "{:<width$} ➜  🕑 {}",
+                    login,
+                    Color::Green.bold().paint(&time),
+                    width = login.len(),
+                );
+            }
+            Err(e) => {
+                // If curl error is set to 0 (curl success code), bad login
+                if e.code() == 0 {
+                    eprintln!(
+                        "{:<width$} ➜  ❌ {}",
                         login,
-                        Color::Green.bold().paint(&time),
-                        width = col_len,
+                        Color::Red.bold().paint("bad login"),
+                        width = login.len()
                     );
                 }
-                Err(e) => {
-                    // If curl error is set to 0 (curl success code), bad login
-                    if e.code() == 0 {
-                        eprintln!(
-                            "{:<width$} ➜  ❌ {}",
-                            login,
-                            Color::Red.bold().paint("bad login"),
-                            width = col_len
-                        );
-                    }
-                }
-            }
-
-            // Sleep a bit to prevent Too Many Requests error
-            if i != logins.len() - 1 {
-                sleep(Duration::from_secs_f32(1.0));
             }
         }
-        blue_line(LINE_LEN);
+
+        print_blue_line(LINE_LEN);
     }
 }
 
-fn main() {
-    let args: Vec<String> = std::env::args().collect();
-    if args.len() < 2 {
-        eprintln!("usage: {} <login 1> <login 2> ... <login n>", &args[0]);
-        std::process::exit(1);
-    }
-    let args: Vec<String> = args.into_iter().skip(1).collect();
+fn clap_matches() -> ArgMatches<'static> {
+    App::new("42 Gettime")
+        .version("0.1.0")
+        .author("Mikastiv <mleblanc@student.42quebec.com>")
+        .about("View logtime of 42 school users")
+        .arg(
+            Arg::with_name(CLAP_CONFIG)
+                .short("c")
+                .long("config")
+                .value_name("FILE")
+                .help("Explicit path of config file")
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name(CLAP_LOGIN)
+                .short("l")
+                .long("login")
+                .value_name("LOGIN")
+                .help("42 login of the user")
+                .takes_value(true),
+        )
+        .get_matches()
+}
 
-    let config = match config::get_config() {
+fn main() {
+    let matches = clap_matches();
+
+    let login = matches.value_of(CLAP_LOGIN);
+    let config_file = matches.value_of(CLAP_CONFIG);
+
+    let config = match config::get_config(config_file) {
         Ok(c) => c,
         Err(e) => {
             eprintln!("{}", e);
             std::process::exit(1);
         }
+    };
+
+    let login = match login {
+        Some(l) => l,
+        None => match &config.login {
+            Some(l) => l.as_str(),
+            None => {
+                eprintln!("No login found in config file or options, try --help");
+                std::process::exit(1);
+            }
+        },
     };
 
     if let Err(msg) = validate_config_dates(&config) {
@@ -159,5 +185,5 @@ fn main() {
     }
 
     let mut easy = Easy::new();
-    print_users_logtime(&mut easy, &args, &config);
+    print_user_logtime(&mut easy, login, &config);
 }

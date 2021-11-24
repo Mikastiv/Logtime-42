@@ -11,24 +11,30 @@ pub struct Config {
     pub secret: String,
     pub from: String,
     pub to: String,
+    pub login: Option<String>,
 }
 
-pub fn get_config() -> Result<Config, String> {
-    let config_file = match fs::File::open(CONFIG_FILE) {
+pub fn get_config(path: Option<&str>) -> Result<Config, String> {
+    let path = match path {
+        Some(p) => p,
+        None => CONFIG_FILE,
+    };
+
+    let config_file = match fs::File::open(path) {
         Ok(mut file) => {
             let mut content = String::new();
             file.read_to_string(&mut content).unwrap();
             content
         }
         Err(_) => {
-            return Err(format!("Cannot open file '{}'", CONFIG_FILE));
+            return Err(format!("Cannot open file '{}'", path));
         }
     };
 
     match serde_json::from_str(&config_file) {
         Ok(c) => Ok(c),
         Err(e) => {
-            return Err(format!("{}: {}", CONFIG_FILE, e));
+            return Err(format!("{}: {}", path, e));
         }
     }
 }

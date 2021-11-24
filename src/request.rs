@@ -168,6 +168,7 @@ pub fn get_locations(
         }
 
         page += 1;
+        // Sleep a bit to prevent Too Many Requests error
         sleep(Duration::from_secs_f64(1.0));
     }
 
