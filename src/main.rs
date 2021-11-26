@@ -82,12 +82,12 @@ fn get_date_span(matches: &ArgMatches<'_>, config: &Config) -> Result<(String, S
         (Some(from), Some(to)) => {
             if !date::valid_format(from) {
                 return Err(
-                    "Bad date format in input: 'from' date format must be YYYY-MM-DD".to_string(),
+                    "Invalid date in input: 'from' date format must be YYYY-MM-DD".to_string(),
                 );
             }
             if !date::valid_format(to) {
                 return Err(
-                    "Bad date format in input: 'to' date format must be YYYY-MM-DD".to_string(),
+                    "Invalid date in input: 'to' date format must be YYYY-MM-DD".to_string()
                 );
             }
 
@@ -100,14 +100,13 @@ fn get_date_span(matches: &ArgMatches<'_>, config: &Config) -> Result<(String, S
         (Some(from), Some(to)) => {
             if !date::valid_format(from) {
                 return Err(
-                    "Bad date format in config file: 'from' date format must be YYYY-MM-DD"
+                    "Invalid date in config file: 'from' date format must be YYYY-MM-DD"
                         .to_string(),
                 );
             }
             if !date::valid_format(to) {
                 return Err(
-                    "Bad date format in config file: 'to' date format must be YYYY-MM-DD"
-                        .to_string(),
+                    "Invalid date in config file: 'to' date format must be YYYY-MM-DD".to_string(),
                 );
             }
 

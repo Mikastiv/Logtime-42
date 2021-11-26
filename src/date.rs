@@ -1,4 +1,4 @@
-use chrono::{Datelike, Local};
+use chrono::{Datelike, Local, LocalResult, TimeZone};
 
 // Checks for YYYY-MM-DD
 pub fn valid_format(date: &str) -> bool {
@@ -12,19 +12,25 @@ pub fn valid_format(date: &str) -> bool {
         return false;
     }
 
-    if let Err(_) = parts[0].parse::<u64>() {
-        return false;
-    }
+    let year = match parts[0].parse() {
+        Ok(y) => y,
+        Err(_) => return false,
+    };
 
-    if let Err(_) = parts[1].parse::<u64>() {
-        return false;
-    }
+    let month = match parts[1].parse() {
+        Ok(m) => m,
+        Err(_) => return false,
+    };
 
-    if let Err(_) = parts[2].parse::<u64>() {
-        return false;
-    }
+    let day = match parts[2].parse() {
+        Ok(d) => d,
+        Err(_) => return false,
+    };
 
-    true
+    match Local.ymd_opt(year, month, day) {
+        LocalResult::None => false,
+        _ => true,
+    }
 }
 
 fn is_leap_year(year: i32) -> bool {
