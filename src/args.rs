@@ -34,7 +34,7 @@ pub fn matches() -> ArgMatches<'static> {
                 .short("m")
                 .long("month")
                 .help("Logtime of the current month")
-                .conflicts_with_all(&[ARG_CUR_DAY, ARG_CUR_MONTH]),
+                .conflicts_with_all(&[ARG_CUR_DAY, ARG_CUR_WEEK]),
         )
         .arg(
             Arg::with_name(ARG_CUR_WEEK)
