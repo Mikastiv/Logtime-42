@@ -5,6 +5,8 @@ pub const ARG_LOGIN: &str = "user";
 pub const ARG_CUR_MONTH: &str = "month";
 pub const ARG_CUR_WEEK: &str = "week";
 pub const ARG_CUR_DAY: &str = "day";
+pub const ARG_FROM: &str = "from";
+pub const ARG_TO: &str = "to";
 
 pub fn matches() -> ArgMatches<'static> {
     App::new("42 GetTime")
@@ -32,24 +34,41 @@ pub fn matches() -> ArgMatches<'static> {
                 .short("m")
                 .long("month")
                 .help("Logtime of the current month")
-                .conflicts_with(ARG_CUR_DAY)
-                .conflicts_with(ARG_CUR_WEEK),
+                .conflicts_with_all(&[ARG_CUR_DAY, ARG_CUR_MONTH]),
         )
         .arg(
             Arg::with_name(ARG_CUR_WEEK)
                 .short("w")
                 .long("week")
                 .help("Logtime of the current week")
-                .conflicts_with(ARG_CUR_DAY)
-                .conflicts_with(ARG_CUR_MONTH),
+                .conflicts_with_all(&[ARG_CUR_DAY, ARG_CUR_MONTH]),
         )
         .arg(
             Arg::with_name(ARG_CUR_DAY)
                 .short("d")
                 .long("day")
                 .help("Logtime of the current day")
-                .conflicts_with(ARG_CUR_MONTH)
-                .conflicts_with(ARG_CUR_WEEK),
+                .conflicts_with_all(&[ARG_CUR_WEEK, ARG_CUR_MONTH]),
+        )
+        .arg(
+            Arg::with_name(ARG_FROM)
+                .short("f")
+                .long("from")
+                .help("Beginning of date span")
+                .takes_value(true)
+                .value_name("YYYY-MM-DD")
+                .requires(ARG_TO)
+                .conflicts_with_all(&[ARG_CUR_DAY, ARG_CUR_WEEK, ARG_CUR_MONTH]),
+        )
+        .arg(
+            Arg::with_name(ARG_TO)
+                .short("t")
+                .long("to")
+                .help("End of date span")
+                .takes_value(true)
+                .value_name("YYYY-MM-DD")
+                .requires(ARG_FROM)
+                .conflicts_with_all(&[ARG_CUR_DAY, ARG_CUR_WEEK, ARG_CUR_MONTH]),
         )
         .get_matches()
 }

@@ -1,9 +1,7 @@
 use chrono::{Datelike, Local};
 
-use crate::config::Config;
-
 // Checks for YYYY-MM-DD
-fn valid_date_format(date: &str) -> bool {
+pub fn valid_format(date: &str) -> bool {
     let parts: Vec<&str> = date.split('-').collect();
 
     if parts.len() != 3 {
@@ -27,24 +25,6 @@ fn valid_date_format(date: &str) -> bool {
     }
 
     true
-}
-
-pub fn validate_config_dates(config: &Config) -> Result<(), String> {
-    if let Some(from) = &config.from {
-        if !valid_date_format(&from) {
-            return Err(
-                "Bad date format in config file: 'from' date format must be YYYY-MM-DD".to_string(),
-            );
-        }
-    }
-    if let Some(to) = &config.to {
-        if !valid_date_format(&to) {
-            return Err(
-                "Bad date format in config file: 'to' date format must be YYYY-MM-DD".to_string(),
-            );
-        }
-    }
-    Ok(())
 }
 
 fn is_leap_year(year: i32) -> bool {

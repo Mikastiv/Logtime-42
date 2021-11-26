@@ -1,10 +1,11 @@
 # 42 GetTime
 
-Get the logtime for a specific user
+View logtime of a 42 school student
 
 ## Usage
 ```
-gettime [FLAGS] [OPTIONS]
+USAGE:
+    gettime [FLAGS] [OPTIONS]
 
 FLAGS:
     -d, --day        Logtime of the current day
@@ -14,8 +15,10 @@ FLAGS:
     -w, --week       Logtime of the current week
 
 OPTIONS:
-    -c, --config <FILE>    Explicit path of config file
-    -l, --login <LOGIN>    42 login of the user
+    -c, --config <FILE>        Explicit path of config file
+    -f, --from <YYYY-MM-DD>    Beginning of date span
+    -t, --to <YYYY-MM-DD>      End of date span
+    -l, --login <LOGIN>        42 login of the user
 ```
 
 NOTE: if no date span is found in config file and the --month flag is not used, --month will be used by default
@@ -27,8 +30,8 @@ Uses a config.json file
 {
     "client_id": "42 Application UID",
     "secret": "42 Application SECRET_KEY",
-    "from": "2021-10-21", // Optional if flag -m / -w / -d is used
-    "to": "2021-10-22", // Optional if flag -m / -w / -d is used
+    "from": "2021-10-21", // Optional
+    "to": "2021-10-22", // Optional
     "login": "your_login" // Optional if passed with -l
 }
 ```

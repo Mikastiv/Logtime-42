@@ -1,5 +1,5 @@
 use ansi_term::Color;
-use args::{ARG_CONFIG, ARG_CUR_DAY, ARG_CUR_MONTH, ARG_CUR_WEEK, ARG_LOGIN};
+use args::{ARG_CONFIG, ARG_CUR_DAY, ARG_CUR_MONTH, ARG_CUR_WEEK, ARG_FROM, ARG_LOGIN, ARG_TO};
 use clap::ArgMatches;
 use config::Config;
 use curl::easy::Easy;
@@ -63,6 +63,8 @@ fn get_date_span(matches: &ArgMatches<'_>, config: &Config) -> Result<(String, S
     let month_flag = matches.is_present(ARG_CUR_MONTH);
     let day_flag = matches.is_present(ARG_CUR_DAY);
     let week_flag = matches.is_present(ARG_CUR_WEEK);
+    let from = matches.value_of(ARG_FROM);
+    let to = matches.value_of(ARG_TO);
 
     if month_flag {
         return Ok(date::current_month_span());
@@ -76,10 +78,37 @@ fn get_date_span(matches: &ArgMatches<'_>, config: &Config) -> Result<(String, S
         return Ok(date::current_week_span());
     }
 
+    match (from, to) {
+        (Some(from), Some(to)) => {
+            if !date::valid_format(from) {
+                return Err(
+                    "Bad date format in input: 'from' date format must be YYYY-MM-DD".to_string(),
+                );
+            }
+            if !date::valid_format(to) {
+                return Err(
+                    "Bad date format in input: 'to' date format must be YYYY-MM-DD".to_string(),
+                );
+            }
+
+            return Ok((from.to_string(), to.to_string()));
+        }
+        _ => {}
+    }
+
     match (&config.from, &config.to) {
         (Some(from), Some(to)) => {
-            if let Err(msg) = date::validate_config_dates(&config) {
-                return Err(msg);
+            if !date::valid_format(from) {
+                return Err(
+                    "Bad date format in config file: 'from' date format must be YYYY-MM-DD"
+                        .to_string(),
+                );
+            }
+            if !date::valid_format(to) {
+                return Err(
+                    "Bad date format in config file: 'to' date format must be YYYY-MM-DD"
+                        .to_string(),
+                );
             }
 
             Ok((from.to_string(), to.to_string()))
