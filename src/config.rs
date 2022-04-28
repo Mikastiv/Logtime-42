@@ -31,5 +31,5 @@ pub fn get_config(path: Option<&str>) -> Result<Config, String> {
         }
     };
 
-    serde_json::from_str(&config_file).or_else(|e| Err(format!("{}: {}", path, e)))
+    serde_json::from_str(&config_file).map_err(|e| format!("{}: {}", path, e))
 }

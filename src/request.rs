@@ -185,7 +185,7 @@ fn get_locations(
     Ok(locations)
 }
 
-fn sum_time(locations: &Vec<Location>) -> f64 {
+fn sum_time(locations: &[Location]) -> f64 {
     locations.iter().fold(0.0, |acc, loc: &Location| {
         let (start, end) = match (&loc.begin_at, &loc.end_at) {
             (Some(ref s), Some(ref e)) => {

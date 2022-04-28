@@ -26,7 +26,7 @@ fn print_header(from: &str, to: &str) {
 }
 
 fn print_user_logtime(easy: &mut Easy, config: &Config, login: &str, from: &str, to: &str) {
-    if let Ok(token) = request::authenticate(easy, &config) {
+    if let Ok(token) = request::authenticate(easy, config) {
         print_header(from, to);
 
         match request::get_user_logtime(easy, &token, login, from, to) {
@@ -59,7 +59,7 @@ fn get_login(arg_login: &Option<&str>, config_login: &Option<String>) -> Result<
     }
 }
 
-fn get_date_span(matches: &ArgMatches<'_>, config: &Config) -> Result<(String, String), String> {
+fn get_date_span(matches: &ArgMatches, config: &Config) -> Result<(String, String), String> {
     let month_flag = matches.is_present(ARG_CUR_MONTH);
     let day_flag = matches.is_present(ARG_CUR_DAY);
     let week_flag = matches.is_present(ARG_CUR_WEEK);
@@ -78,22 +78,15 @@ fn get_date_span(matches: &ArgMatches<'_>, config: &Config) -> Result<(String, S
         return Ok(date::current_week_span());
     }
 
-    match (from, to) {
-        (Some(from), Some(to)) => {
-            if !date::valid_format(from) {
-                return Err(
-                    "Invalid date in input: 'from' date format must be YYYY-MM-DD".to_string(),
-                );
-            }
-            if !date::valid_format(to) {
-                return Err(
-                    "Invalid date in input: 'to' date format must be YYYY-MM-DD".to_string()
-                );
-            }
-
-            return Ok((from.to_string(), to.to_string()));
+    if let (Some(from), Some(to)) = (from, to) {
+        if !date::valid_format(from) {
+            return Err("Invalid date in input: 'from' date format must be YYYY-MM-DD".to_string());
         }
-        _ => {}
+        if !date::valid_format(to) {
+            return Err("Invalid date in input: 'to' date format must be YYYY-MM-DD".to_string());
+        }
+
+        return Ok((from.to_string(), to.to_string()));
     }
 
     match (&config.from, &config.to) {

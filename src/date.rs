@@ -27,10 +27,7 @@ pub fn valid_format(date: &str) -> bool {
         Err(_) => return false,
     };
 
-    match Local.ymd_opt(year, month, day) {
-        LocalResult::None => false,
-        _ => true,
-    }
+    !matches!(Local.ymd_opt(year, month, day), LocalResult::None)
 }
 
 fn is_leap_year(year: i32) -> bool {
@@ -88,7 +85,7 @@ pub fn current_week_span() -> (String, String) {
         week_start = week_start.pred();
     }
 
-    let mut week_end = week_start.clone();
+    let mut week_end = week_start;
     for _ in 0..7 {
         week_end = week_end.succ();
     }

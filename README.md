@@ -1,11 +1,11 @@
-# 42 GetTime
+# Logtime 42
 
 View logtime of a 42 school student
 
 ## Usage
 ```
 USAGE:
-    gettime [FLAGS] [OPTIONS]
+    logtime42 [FLAGS] [OPTIONS]
 
 FLAGS:
     -d, --day        Logtime of the current day
@@ -24,6 +24,8 @@ OPTIONS:
 NOTE: if no date span is found in config file and the --month flag is not used, --month will be used by default
 
 ## Config
+
+You will need an API public/private key pair for [42 API](https://profile.intra.42.fr/oauth/applications)
 
 Uses a config.json file
 ```
