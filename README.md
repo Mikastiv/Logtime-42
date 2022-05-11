@@ -27,7 +27,7 @@ NOTE: if no date span is found in config file and the --month flag is not used, 
 
 You will need an API public/private key pair for [42 API](https://profile.intra.42.fr/oauth/applications)
 
-Uses a config.json file
+Uses a config.json file. Checks first for the file passed with -c, if none, looks in the current working directory.
 ```
 {
     "client_id": "42 Application UID",
