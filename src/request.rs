@@ -1,6 +1,6 @@
 use std::{thread::sleep, time::Duration};
 
-use chrono::DateTime;
+use chrono::{DateTime, Utc};
 use curl::easy::{Easy, List};
 use http::StatusCode;
 use serde::Deserialize;
@@ -191,6 +191,11 @@ fn sum_time(locations: &[Location]) -> f64 {
             (Some(ref s), Some(ref e)) => {
                 let start = DateTime::parse_from_rfc3339(s).unwrap();
                 let end = DateTime::parse_from_rfc3339(e).unwrap();
+                (start, end)
+            }
+            (Some(ref s), None) => {
+                let start = DateTime::parse_from_rfc3339(s).unwrap();
+                let end = Utc::now().with_timezone(start.offset());
                 (start, end)
             }
             _ => return acc,
