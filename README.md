@@ -23,6 +23,14 @@ OPTIONS:
 
 NOTE: if no date span is found in config file and the --month flag is not used, --month will be used by default
 
+## Install
+
+- Download rust
+- Clone project
+- ```cargo build --release```
+- Create an API key pair ([42 API](https://profile.intra.42.fr/oauth/applications/new))
+- Create config.json file
+
 ## Config
 
 You will need an API public/private key pair for the [42 API](https://profile.intra.42.fr/oauth/applications/new)
