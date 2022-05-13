@@ -23,19 +23,21 @@ OPTIONS:
 
 NOTE: if no date span is found in config file and the --month flag is not used, --month will be used by default
 
-## Install
+## Build
 
 - Download rust
 - Clone project
-- ```cargo build --release```
+- ```cargo build --release``` (binary will be in target/release)
 - Create an API key pair ([42 API](https://profile.intra.42.fr/oauth/applications/new))
-- Create config.json file
+- Create config.json file with key pair
 
 ## Config
 
-You will need an API public/private key pair for the [42 API](https://profile.intra.42.fr/oauth/applications/new)
+You will need an API public/private key pair for the 42 API
 
-Uses a config.json file. Checks first for the file passed with -c, if none, looks in the current working directory.
+The program checks first for the file passed with -c, if none, looks in the current working directory.
+
+config.json file example: <br/>
 ```
 {
     "client_id": "42 Application UID",
