@@ -48,4 +48,9 @@ config.json file example: <br/>
 }
 ```
 
+I suggest creating an alias to run it from anywhere <br/>
+```alias="PATH_TO_PROJECT_DIR/target/release/logtime42 --config PATH_TO_CONFIG_FILE"```
+
+## Screenshot
+
 ![Screenshot](screenshot.png)
