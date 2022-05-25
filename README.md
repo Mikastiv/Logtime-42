@@ -40,8 +40,8 @@ The program checks first for the file passed with -c, if none, looks in the curr
 config.json file example: <br/>
 ```
 {
-    "client_id": "42 Application UID",
-    "secret": "42 Application SECRET_KEY",
+    "client_id": "42_Application_UID",
+    "secret": "42_Application_SECRET_KEY",
     "from": "2021-10-21", // Optional
     "to": "2021-10-22", // Optional
     "login": "your_login" // Optional if passed with -l
