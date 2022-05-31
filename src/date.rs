@@ -30,32 +30,23 @@ pub fn valid_format(date: &str) -> bool {
     !matches!(Local.ymd_opt(year, month, day), LocalResult::None)
 }
 
-fn is_leap_year(year: i32) -> bool {
-    if year % 400 == 0 {
-        return true;
-    }
-
-    if year % 100 == 0 {
-        return false;
-    }
-
-    if year % 4 == 0 {
-        return true;
-    }
-
-    false
-}
-
 pub fn current_month_span() -> (String, String) {
     let today = Local::today();
     let start = format!("{:04}-{:02}-{:02}", today.year(), today.month(), 1);
-    let last_day: u32 = match today.month() {
-        2 if is_leap_year(today.year()) => 29,
-        2 => 28,
-        4 | 6 | 9 | 11 => 30,
-        _ => 31,
+    let next_month: u32 = match today.month() {
+        12 => 1,
+        m => m + 1,
     };
-    let end = format!("{:04}-{:02}-{:02}", today.year(), today.month(), last_day);
+    let end = format!(
+        "{:04}-{:02}-{:02}",
+        if today.month() == 12 {
+            today.year() + 1
+        } else {
+            today.year()
+        },
+        next_month,
+        1
+    );
     (start, end)
 }
 
