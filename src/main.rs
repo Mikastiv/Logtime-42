@@ -31,13 +31,19 @@ fn print_user_logtime(easy: &mut Easy, config: &Config, login: &str, from: &str,
 
         match request::get_user_logtime(easy, &token, login, from, to) {
             Ok(time) => {
-                let time = format!("{:01.0}h{:02.0}", time.trunc(), time.fract() * 60.0);
+                let mut min = (time.fract() * 60.0) as i32;
+                let mut hour = time.trunc() as i32;
+                if min == 60 {
+                    min = 0;
+                    hour += 1;
+                }
+                let time = format!("{:01.0}h{:02.0}", hour, min);
                 println!("{} ➜  🕑 {}", login, Color::Green.bold().paint(&time),);
             }
             Err(e) => {
                 // If curl error is set to 0 (curl success code), bad login
                 if e.code() == 0 {
-                    eprintln!("{} ➜  ❌ {}", login, Color::Red.bold().paint("bad login"),);
+                    eprintln!("{} ➜  ❌ {}", login, Color::Red.bold().paint("bad login"));
                 }
             }
         }
