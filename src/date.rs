@@ -1,4 +1,4 @@
-use chrono::{Datelike, Local, LocalResult, TimeZone};
+use chrono::{DateTime, Datelike, Local, LocalResult, TimeZone, Utc};
 
 // Checks for YYYY-MM-DD
 pub fn valid_format(date: &str) -> bool {
@@ -30,43 +30,30 @@ pub fn valid_format(date: &str) -> bool {
     !matches!(Local.ymd_opt(year, month, day), LocalResult::None)
 }
 
+fn to_utc_time(local_time: DateTime<Local>) -> DateTime<Utc> {
+    DateTime::from(local_time)
+}
+
 pub fn current_month_span() -> (String, String) {
     let today = Local::today();
-    let start = format!("{:04}-{:02}-{:02}", today.year(), today.month(), 1);
-    let next_month: u32 = match today.month() {
-        12 => 1,
-        m => m + 1,
+    let (end_month, end_year) = match today.month() {
+        12 => (1, today.year() + 1),
+        m => (m + 1, today.year()),
     };
-    let end = format!(
-        "{:04}-{:02}-{:02}",
-        if today.month() == 12 {
-            today.year() + 1
-        } else {
-            today.year()
-        },
-        next_month,
-        1
-    );
-    (start, end)
+    (
+        to_utc_time(Local.ymd(today.year(), today.month(), 1).and_hms(0, 0, 0)).to_rfc3339(),
+        to_utc_time(Local.ymd(end_year, end_month, 1).and_hms(0, 0, 0)).to_rfc3339(),
+    )
 }
 
 pub fn current_day_span() -> (String, String) {
-    let today = Local::today();
-    let tomorrow = today.succ();
-    let start = format!(
-        "{:04}-{:02}-{:02}",
-        today.year(),
-        today.month(),
-        today.day()
-    );
-    let end = format!(
-        "{:04}-{:02}-{:02}",
-        tomorrow.year(),
-        tomorrow.month(),
-        tomorrow.day()
-    );
+    let today = Local::today().and_hms(0, 0, 0);
+    let tomorrow = Local::today().succ().and_hms(0, 0, 0);
 
-    (start, end)
+    (
+        to_utc_time(today).to_rfc3339(),
+        to_utc_time(tomorrow).to_rfc3339(),
+    )
 }
 
 pub fn current_week_span() -> (String, String) {
@@ -81,18 +68,23 @@ pub fn current_week_span() -> (String, String) {
         week_end = week_end.succ();
     }
 
-    let start = format!(
-        "{:04}-{:02}-{:02}",
-        week_start.year(),
-        week_start.month(),
-        week_start.day()
-    );
-    let end = format!(
-        "{:04}-{:02}-{:02}",
-        week_end.year(),
-        week_end.month(),
-        week_end.day()
-    );
+    (
+        to_utc_time(week_start.and_hms(0, 0, 0)).to_rfc3339(),
+        to_utc_time(week_end.and_hms(0, 0, 0)).to_rfc3339(),
+    )
+}
 
-    (start, end)
+pub fn parse_date(s: &str) -> DateTime<Local> {
+    let mut parts = s.split('-');
+    let year = parts.next().unwrap();
+    let month = parts.next().unwrap();
+    let day = parts.next().unwrap();
+
+    Local
+        .ymd(
+            year.parse().unwrap(),
+            month.parse().unwrap(),
+            day.parse().unwrap(),
+        )
+        .and_hms(0, 0, 0)
 }

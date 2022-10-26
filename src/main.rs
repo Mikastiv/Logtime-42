@@ -1,8 +1,10 @@
 use ansi_term::Color;
 use args::{ARG_CONFIG, ARG_CUR_DAY, ARG_CUR_MONTH, ARG_CUR_WEEK, ARG_FROM, ARG_LOGIN, ARG_TO};
+use chrono::{DateTime, Utc};
 use clap::ArgMatches;
 use config::Config;
 use curl::easy::Easy;
+use date::parse_date;
 
 mod args;
 mod config;
@@ -16,11 +18,13 @@ fn print_blue_line(len: usize) {
 }
 
 fn print_header(from: &str, to: &str) {
+    let from = from.split_once('T').unwrap();
+    let to = to.split_once('T').unwrap();
     print_blue_line(LINE_LEN);
     println!(
         "From {} to {}",
-        Color::Yellow.paint(from),
-        Color::Yellow.paint(to)
+        Color::Yellow.paint(from.0),
+        Color::Yellow.paint(to.0)
     );
     print_blue_line(LINE_LEN);
 }
@@ -92,7 +96,9 @@ fn get_date_span(matches: &ArgMatches, config: &Config) -> Result<(String, Strin
             return Err("Invalid date in input: 'to' date format must be YYYY-MM-DD".to_string());
         }
 
-        return Ok((from.to_string(), to.to_string()));
+        let start: DateTime<Utc> = DateTime::from(parse_date(from));
+        let end: DateTime<Utc> = DateTime::from(parse_date(to));
+        return Ok((start.to_rfc3339(), end.to_rfc3339()));
     }
 
     match (&config.from, &config.to) {
